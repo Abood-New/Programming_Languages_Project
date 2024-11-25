@@ -51,4 +51,9 @@ class User extends Authenticatable
             'is_admin' => 'boolean'
         ];
     }
+
+    public function favorites()
+    {
+        return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
+    }
 }
