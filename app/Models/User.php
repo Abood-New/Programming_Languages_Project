@@ -52,6 +52,10 @@ class User extends Authenticatable
         ];
     }
 
+    public function stores()
+    {
+        return $this->hasMany(Store::class, 'owner_id');
+    }
     public function favorites()
     {
         return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
