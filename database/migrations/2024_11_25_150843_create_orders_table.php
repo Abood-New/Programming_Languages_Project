@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->date('order_date');
             $table->string('order_status');
-            $table->decimal('total_price', 12, 2);
+            $table->integer('total_price');
             $table->string('address');
             $table->foreignId('user_id')->constrained();
             $table->timestamps();
