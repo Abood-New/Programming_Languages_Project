@@ -14,13 +14,15 @@ return new class extends Migration {
             $table->id();
             $table->string('first_name');
             $table->string('last_name');
+            $table->string('phone')->unique();
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('address');
-            $table->string('mobile')->unique();
             $table->string('profile_picture');
-            $table->boolean('is_admin')->default(false);
+            $table->text('fcm_token')->nullable();
             $table->rememberToken();
+            $table->enum('role', ['user', 'admin'])->default('user');
             $table->timestamps();
         });
 
