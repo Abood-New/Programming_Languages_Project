@@ -10,9 +10,13 @@ class Store extends Model
         'name',
         'store_image'
     ];
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_store')->withPivot([
+        return $this->belongsToMany(Product::class, 'product_stores')->withPivot([
             'available_quantity',
             'price'
         ]);

@@ -49,7 +49,7 @@ class AuthController extends Controller
         $user = User::where('phone', $request->phone)->first();
         $user->update(['fcm_token' => $request->fcm_token]);
 
-        $token = $user->createToken('access_token', $user->role)->plainTextToken;
+        $token = $user->createToken('access_token', [$user->role])->plainTextToken;
 
         $data = [];
         $data['user'] = $user;
