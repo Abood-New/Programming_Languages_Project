@@ -53,12 +53,12 @@ class User extends Authenticatable
         ];
     }
 
-    public function stores()
+    public function store()
     {
-        return $this->hasMany(Store::class, 'owner_id');
+        return $this->hasOne(Store::class, 'owner_id');
     }
     public function favorites()
     {
-        return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
+        return $this->belongsToMany(Product::class, 'favorites');
     }
 }

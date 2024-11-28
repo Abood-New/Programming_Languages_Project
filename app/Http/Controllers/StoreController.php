@@ -79,7 +79,11 @@ class StoreController extends Controller
             $validated['store_image'] = $filePath;
         }
 
-        $store = auth()->user()->stores()->create($validated);
+        $store = Store::create([
+            'name' => $validated['name'],
+            'store_image' => $validated['store_image'],
+            'owner_id' => auth()->id()
+        ]);
 
         $store->store_image_url = asset('storage/' . $store->store_image);
         return response()->json([

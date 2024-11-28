@@ -13,8 +13,8 @@ return new class extends Migration {
         Schema::create('stores', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('store_image');
-            $table->foreignId('owner_id')->constrained('users');
+            $table->string('store_image')->nullable();
+            $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }

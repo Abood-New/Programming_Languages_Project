@@ -8,7 +8,8 @@ class Store extends Model
 {
     protected $fillable = [
         'name',
-        'store_image'
+        'store_image',
+        'owner_id'
     ];
     protected $hidden = [
         'created_at',

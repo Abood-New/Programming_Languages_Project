@@ -14,8 +14,13 @@ class ProductStore extends Model
         'price'
     ];
 
-    public function orderItems()
+    public function order()
     {
-        return $this->hasMany(ItemOrder::class);
+        return $this->belongsTo(Order::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

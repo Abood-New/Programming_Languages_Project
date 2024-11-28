@@ -9,12 +9,13 @@ class Product extends Model
     protected $fillable = [
         'name',
         'description',
-        'product_image'
+        'product_image',
+        'category_id'
     ];
 
     public function favoritedBy()
     {
-        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+        return $this->belongsToMany(User::class, 'favorites');
     }
     public function stores()
     {

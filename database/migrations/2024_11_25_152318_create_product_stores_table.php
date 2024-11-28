@@ -14,8 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('product_id')->constrained();
             $table->foreignId('store_id')->constrained();
-            $table->integer('available_quantity');
-            $table->integer('price');
+            $table->unsignedInteger('available_quantity');
+            $table->unsignedInteger('price');
             $table->timestamps();
         });
     }
@@ -26,5 +26,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('product_store');
+        Schema::dropIfExists('products');
+        Schema::dropIfExists('stores');
     }
 };

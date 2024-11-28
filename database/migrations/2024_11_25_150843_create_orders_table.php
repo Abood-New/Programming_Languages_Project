@@ -15,9 +15,9 @@ return new class extends Migration {
             $table->id();
             $table->date('order_date');
             $table->string('order_status')->default(OrderStatus::PENDING->value);
-            $table->integer('total_price');
+            $table->unsignedInteger('total_price');
             $table->string('address');
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
