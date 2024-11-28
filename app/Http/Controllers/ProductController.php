@@ -9,7 +9,6 @@ use App\Models\Product;
 use App\Models\ProductStore;
 use App\Models\Store;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
