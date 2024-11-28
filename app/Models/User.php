@@ -22,10 +22,12 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'password',
+        'email',
         'address',
-        'mobile',
+        'phone',
         'profile_picture',
-        'is_admin'
+        'role',
+        'fcm_token'
     ];
 
     /**
@@ -48,7 +50,15 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean'
         ];
+    }
+
+    public function store()
+    {
+        return $this->hasOne(Store::class, 'owner_id');
+    }
+    public function favorites()
+    {
+        return $this->belongsToMany(Product::class, 'favorites');
     }
 }

@@ -24,7 +24,7 @@ class AuthController extends Controller
         ]);
         Storage::put("avatars/{$user->id}", $file);
 
-        $token = $user->createToken('access_token')->plainTextToken;
+        $token = $user->createToken('access_token', ['user'])->plainTextToken;
         $data = [];
         $data['user'] = $user;
         $data['token'] = $token;
@@ -37,10 +37,8 @@ class AuthController extends Controller
     }
     public function login(LoginUserRequest $request): JsonResponse
     {
-        $credentials = $request->validated();
-
-        if (!Auth::attempt($credentials)) {
-            $message = 'Mobile & password does not match with our records';
+        if (!Auth::attempt($request->only(['phone', 'password']))) {
+            $message = 'Phone number & password does not match with our records';
             return response()->json([
                 'status' => 0,
                 'data' => [],
@@ -48,8 +46,10 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user = auth()->user();
-        $token = $user->createToken('access_token')->plainTextToken;
+        $user = User::where('phone', $request->phone)->first();
+        $user->update(['fcm_token' => $request->fcm_token]);
+
+        $token = $user->createToken('access_token', [$user->role])->plainTextToken;
 
         $data = [];
         $data['user'] = $user;
@@ -63,7 +63,7 @@ class AuthController extends Controller
     }
     public function logout(): JsonResponse
     {
-        Auth::user()->currentAccessToken()->delete();
+        auth()->user()->tokens()->delete();
 
         return response()->json([
             'status' => 1,
