@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\UserRegistered;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginUserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -15,24 +18,44 @@ class AuthController extends Controller
 {
     public function register(RegisterUserRequest $request): JsonResponse
     {
-        $file = $request->file('profile_picture');
-        $name = $file->hashName();
+        $profilePictureName = null;
+        if ($request->hasFile('profile_picture')) {
+            $file = $request->file('profile_picture');
+            $profilePictureName = $file->hashName();
+        }
 
-        $user = User::create([
-            ...$request->except('profile_picture'),
-            'profile_picture' => $name
+        $verificationCode = random_int(100000, 999999);
+
+        $userData = $request->only([
+            'first_name',
+            'last_name',
+            'email',
+            'address',
+            'phone',
+            'password'
         ]);
-        Storage::put("avatars/{$user->id}", $file);
+        $userData['profile_picture'] = $profilePictureName;
+        $userData['verification_code'] = $verificationCode;
 
-        $token = $user->createToken('access_token', ['user'])->plainTextToken;
-        $data = [];
-        $data['user'] = $user;
-        $data['token'] = $token;
+        $user = User::create($userData);
+
+        // Step 3: Store Profile Picture (if uploaded)
+        if ($profilePictureName) {
+            $file->storeAs("users/{$user->id}", $profilePictureName);
+        }
+
+        // Step 4: Generate Access Token
+        $token = $user->createToken('API TOKEN', ['user'])->plainTextToken;
+
+        // event(new UserRegistered($user, $verificationCode));
 
         return response()->json([
             'status' => 1,
-            'data' => $data,
-            'message' => 'User registered successfully'
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ],
+            'message' => 'User registered successfully',
         ]);
     }
     public function login(LoginUserRequest $request): JsonResponse
@@ -47,9 +70,9 @@ class AuthController extends Controller
         }
 
         $user = User::where('phone', $request->phone)->first();
-        $user->update(['fcm_token' => $request->fcm_token]);
+        // $user->update(['fcm_token' => $request->fcm_token]);
 
-        $token = $user->createToken('access_token', [$user->role])->plainTextToken;
+        $token = $user->createToken('API TOKEN', [$user->role])->plainTextToken;
 
         $data = [];
         $data['user'] = $user;
@@ -71,4 +94,31 @@ class AuthController extends Controller
             'message' => 'User logged out successfully'
         ]);
     }
+    public function verifyCode(Request $request): JsonResponse
+    {
+        $phone = auth()->user()->phone;
+        $request->validate([
+            'code' => 'required|numeric|digits:6',
+        ]);
+
+        $user = User::where('phone', $phone)
+            ->where('verification_code', $request->code)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Invalid verification code.',
+            ], 400);
+        }
+
+        // Mark the user as verified
+        $user->update(['verification_code' => null]);
+
+        return response()->json([
+            'status' => 1,
+            'message' => 'Phone number verified successfully.',
+        ]);
+    }
+
 }
