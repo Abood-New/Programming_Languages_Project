@@ -12,7 +12,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\UnauthorizedException;
 
 class ProductController extends Controller
 {
@@ -121,7 +120,7 @@ class ProductController extends Controller
 
             $productImage = null;
             if ($request->hasFile('product_image')) {
-                $productImage = $request->file('product_image')->store('product_images/' . $store_id, 'public');
+                $productImage = $request->file('product_image')->store('product_images/' . $store->id, 'public');
             }
 
             // Create the product
@@ -235,28 +234,49 @@ class ProductController extends Controller
     }
     public function search(Request $request)
     {
-        $query = Product::query();
-
+        // validate the request
+        // TODO
+        // $query = Product::query();
+        $products = Product::query()
+            ->when($request->product_name, function ($query) use ($request) {
+                $query->where('name', 'LIKE', '%' . $request->product_name . '%');
+            })
+            ->when($request->store_name, function ($query) use ($request) {
+                $query->orWhereHas('stores', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', '%' . $request->input('store_name') . '%');
+                });
+            })
+            ->when($request->category_name, function ($query) use ($request) {
+                $category = Category::where('name', $request->input('category_name'))->first();
+                if ($category) {
+                    $query->orWhere('category_id', $category->id);
+                }
+            })
+            // sorting
+            ->when($request->sortBy && $request->sortOrder, function ($query) use ($request) {
+                $query->orderBy($request->sortBy, $request->sortOrder);
+            })
+            ->paginate(20);
         // Apply filters only if they exist in the request
-        if ($request->filled('product_name')) {
-            $query->where('name', 'LIKE', '%' . $request->input('product_name') . '%');
-        }
+        // if ($request->filled('product_name')) {
+        //     $query->where('name', 'LIKE', '%' . $request->input('product_name') . '%');
+        // }
 
-        if ($request->filled('store_name')) {
-            $query->orWhereHas('stores', function ($q) use ($request) {
-                $q->where('name', 'LIKE', '%' . $request->input('store_name') . '%');
-            });
-        }
+        // if ($request->filled('store_name')) {
+        //     $query->orWhereHas('stores', function ($q) use ($request) {
+        //         $q->where('name', 'LIKE', '%' . $request->input('store_name') . '%');
+        //     });
+        // }
 
-        if ($request->filled('category_name')) {
-            $category = Category::where('name', $request->input('category_name'))->first();
-            if ($category) {
-                $query->orWhere('category_id', $category->id);
-            }
-        }
+        // if ($request->filled('category_name')) {
+        //     $category = Category::where('name', $request->input('category_name'))->first();
+        //     if ($category) {
+        //         $query->orWhere('category_id', $category->id);
+        //     }
+        // }
 
-        // Paginate the results
-        $products = $query->paginate(20);
+        // // Paginate the results
+        // $products = $query->paginate(20);
 
         // Return a structured response
         return response()->json([
