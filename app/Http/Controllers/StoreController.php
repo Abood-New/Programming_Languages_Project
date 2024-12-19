@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +15,7 @@ class StoreController extends Controller
     public function index()
     {
         if (auth()->user()->role == 'admin') {
-            $stores = Store::with('products')->where('owner_id', auth()->id())->simplePaginate(10);
+            $stores = auth()->user()->store()->with(['products'])->paginate(10);
         } else {
             $stores = Store::with('products')->paginate(10);
         }
@@ -69,30 +70,39 @@ class StoreController extends Controller
     }
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'store_image' => 'required|file|mimes:png,jpg|max:2048'
-        ]);
+        try {
+            Gate::authorize('create', Store::class);
+            $validated = $request->validate([
+                'name' => 'required|string',
+                'store_image' => 'nullable|file|mimes:png,jpg|max:2048'
+            ]);
 
-        if ($request->hasFile('store_image')) {
-            $filePath = $request->file('store_image')->store('store_images/' . auth()->id(), 'public');
-            $validated['store_image'] = $filePath;
+            $storeImage = '';
+            if ($request->hasFile('store_image')) {
+                $filePath = $request->file('store_image')->store('store_images/' . auth()->id(), 'public');
+                $storeImage = $filePath;
+            }
+            $store = Store::create([
+                'name' => $validated['name'],
+                'store_image' => $storeImage,
+                'owner_id' => auth()->id()
+            ]);
+
+            $store->store_image_url = asset('storage/' . $store->store_image);
+            return response()->json([
+                'status' => 1,
+                'data' => [
+                    'store' => $store,
+                ],
+                'message' => 'Store created successfully'
+            ], 201);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'status' => 0,
+                'data' => [],
+                'message' => 'You can only have one store'
+            ], 403);
         }
-
-        $store = Store::create([
-            'name' => $validated['name'],
-            'store_image' => $validated['store_image'],
-            'owner_id' => auth()->id()
-        ]);
-
-        $store->store_image_url = asset('storage/' . $store->store_image);
-        return response()->json([
-            'status' => 1,
-            'data' => [
-                'store' => $store,
-            ],
-            'message' => 'Store created successfully'
-        ], 201);
     }
     public function update(Request $request, $store_id)
     {

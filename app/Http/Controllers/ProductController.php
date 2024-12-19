@@ -37,7 +37,7 @@ class ProductController extends Controller
     {
         // products related to store
         $products = Product::whereHas('stores', function ($query) use ($store_id) {
-            $query->where('id', $store_id);
+            $query->where('store_id', $store_id);
         })->paginate(20);
 
         $products->transform(function ($product) {
@@ -236,7 +236,6 @@ class ProductController extends Controller
     {
         // validate the request
         // TODO
-        // $query = Product::query();
         $products = Product::query()
             ->when($request->product_name, function ($query) use ($request) {
                 $query->where('name', 'LIKE', '%' . $request->product_name . '%');
@@ -257,27 +256,6 @@ class ProductController extends Controller
                 $query->orderBy($request->sortBy, $request->sortOrder);
             })
             ->paginate(20);
-        // Apply filters only if they exist in the request
-        // if ($request->filled('product_name')) {
-        //     $query->where('name', 'LIKE', '%' . $request->input('product_name') . '%');
-        // }
-
-        // if ($request->filled('store_name')) {
-        //     $query->orWhereHas('stores', function ($q) use ($request) {
-        //         $q->where('name', 'LIKE', '%' . $request->input('store_name') . '%');
-        //     });
-        // }
-
-        // if ($request->filled('category_name')) {
-        //     $category = Category::where('name', $request->input('category_name'))->first();
-        //     if ($category) {
-        //         $query->orWhere('category_id', $category->id);
-        //     }
-        // }
-
-        // // Paginate the results
-        // $products = $query->paginate(20);
-
         // Return a structured response
         return response()->json([
             'status' => $products->isNotEmpty() ? 1 : 0,

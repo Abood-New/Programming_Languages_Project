@@ -23,6 +23,10 @@ class StorePolicy
     {
         return $user->role == 'user' || $store->owner_id == $user->id;
     }
+    public function create(User $user): bool
+    {
+        return !$user->store()->exists();
+    }
 
     /**
      * Determine whether the user can update the model.
