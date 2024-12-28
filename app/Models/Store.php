@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Store extends Model
 {
     protected $fillable = [
-        'name',
+        'store_name',
         'store_image',
+        'description',
         'owner_id'
     ];
     protected $hidden = [
@@ -17,13 +18,14 @@ class Store extends Model
     ];
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_stores')->withPivot([
-            'available_quantity',
-            'price'
-        ]);
+        return $this->hasMany(Product::class);
     }
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+    public function orders()
+    {
+        return $this->hasManyThrough(Order::class, OrderItem::class);
     }
 }

@@ -2,23 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\Store;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\UnauthorizedException;
 
 class StoreController extends Controller
 {
-    public function index()
+    public function getAllStores()
     {
-        if (auth()->user()->role == 'admin') {
-            $stores = auth()->user()->store()->with(['products'])->paginate(10);
-        } else {
-            $stores = Store::with('products')->paginate(10);
-        }
+        $stores = Store::all();
 
         if ($stores->isEmpty()) {
             return response()->json([
@@ -40,40 +38,53 @@ class StoreController extends Controller
             'message' => 'Stores retrieved successfully'
         ], 200);
     }
-    public function show($store_id)
+    public function getMyStore()
     {
-        try {
-            $store = Store::with('products')->findOrFail($store_id);
+        // Get the authenticated user's ID
+        $userId = Auth::user()->id;
 
-            Gate::authorize('view', $store);
+        // Retrieve the stores for the authenticated user
+        $stores = Store::where('user_id', $userId)->get();
 
-            $store->store_image_url = asset('storage/' . $store->store_image);
+        // Check if the user has any stores
+        if ($stores->isEmpty()) {
+            return response()->json(['message' => 'No stores found for this user.'], 404);
+        }
 
-            return response()->json([
-                'status' => 1,
-                'data' => ['store' => $store],
-                'message' => 'store retrieved successfully'
-            ]);
+        // Return the stores
+        return response()->json([
+            'status' => 1,
+            'stores' => $stores,
+            'message' => 'Store retrieved successfully'
+        ], 200);
+    }
+    public function getProductsByStore($storeId)
+    {
+        try {// Find the store by ID
+            $store = Store::findOrFail($storeId);
+
+            // Check if the store exists
+            if (!$store) {
+                return response()->json(['message' => 'Store not found.'], 404);
+            }
+
+            // Get all products for the specified store
+            $products = Product::where('store_id', $store->id)->get();
+            return response()->json(['store' => $store->store_name, 'products' => $products], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => 0,
                 'data' => [],
                 'message' => 'store cannot be found'
             ], 404);
-        } catch (UnauthorizedException $e) {
-            return response()->json([
-                'status' => 0,
-                'data' => [],
-                'message' => 'You are not authorized to view this store'
-            ], 403);
         }
     }
-    public function store(Request $request)
+    public function createStore(Request $request)
     {
         try {
             Gate::authorize('create', Store::class);
             $validated = $request->validate([
-                'name' => 'required|string',
+                'store_name' => 'required|string',
                 'store_image' => 'nullable|file|mimes:png,jpg|max:2048'
             ]);
 
@@ -83,7 +94,7 @@ class StoreController extends Controller
                 $storeImage = $filePath;
             }
             $store = Store::create([
-                'name' => $validated['name'],
+                'store_name' => $validated['store_name'],
                 'store_image' => $storeImage,
                 'owner_id' => auth()->id()
             ]);
@@ -104,7 +115,7 @@ class StoreController extends Controller
             ], 403);
         }
     }
-    public function update(Request $request, $store_id)
+    public function updateStore(Request $request, $store_id)
     {
         try {
             $store = Store::findOrFail($store_id);
@@ -112,7 +123,8 @@ class StoreController extends Controller
             Gate::authorize('update', $store);
 
             $validated = $request->validate([
-                'name' => 'sometimes|string',
+                'store_name' => 'sometimes|string',
+                'description' => 'sometimes|string',
                 'store_image' => 'nullable|file|mimes:png,jpg|max:2048'
             ]);
 
@@ -177,4 +189,25 @@ class StoreController extends Controller
             ], 403);
         }
     }
+    public function filterStoreByName(Request $request)
+    {
+        // Get the store_name from the query parameters
+        $storeName = $request->query('store_name');
+
+        // Validate the input
+        if (!$storeName) {
+            return response()->json(['message' => 'The store_name query parameter is required.'], 400);
+        }
+
+        // Retrieve the store(s) that match the name
+        $stores = Store::where('store_name', 'LIKE', "%{$storeName}%")->get();
+
+        // Check if any stores were found
+        if ($stores->isEmpty()) {
+            return response()->json(['message' => 'No stores found matching the given name.'], 404);
+        }
+
+        return response()->json(['stores' => $stores], 200);
+    }
 }
+

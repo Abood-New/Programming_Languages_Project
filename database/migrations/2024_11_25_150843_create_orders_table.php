@@ -13,11 +13,9 @@ return new class extends Migration {
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->date('order_date');
-            $table->string('order_status')->default(OrderStatus::PENDING->value);
-            $table->unsignedInteger('total_price');
-            $table->string('address');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('location')->nullable();
+            $table->unsignedInteger('total_price');
             $table->timestamps();
         });
     }

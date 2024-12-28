@@ -24,11 +24,11 @@ class RegisterUserRequest extends FormRequest
         return [
             'first_name' => 'required|min:3|string',
             'last_name' => 'required|min:3|string',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|unique:users,phone|digits:10',
+            'phone' => 'required|string|regex:/^09[0-9]{8}$/|unique:users,phone|digits:10',
             'password' => 'required|min:8|string|confirmed',
-            'address' => 'required|string',
+            'address' => 'nullable|string',
             'profile_picture' => 'nullable|file|mimes:png,jpg,jpeg|max:2048',
+            'role' => 'required|in:admin,store_owner,customer'
         ];
     }
 }

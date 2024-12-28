@@ -4,9 +4,10 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsAdminMiddleware
+class isStoreOwner
 {
     /**
      * Handle an incoming request.
@@ -15,13 +16,10 @@ class IsAdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user()->tokenCan('admin')) {
-            return response()->json([
-                'status' => 0,
-                'data' => [],
-                'message' => 'Unauthorized activity'
-            ], 403);
+        if (Auth::check() && Auth::user()->role == 'store_owner') {
+            return $next($request);
         }
-        return $next($request);
+
+        return response()->json(['error' => 'Unauthorized'], 403);
     }
 }

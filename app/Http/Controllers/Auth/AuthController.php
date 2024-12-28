@@ -29,10 +29,10 @@ class AuthController extends Controller
         $userData = $request->only([
             'first_name',
             'last_name',
-            'email',
             'address',
             'phone',
-            'password'
+            'password',
+            'role'
         ]);
         $userData['profile_picture'] = $profilePictureName;
         $userData['verification_code'] = $verificationCode;
@@ -45,7 +45,7 @@ class AuthController extends Controller
         }
 
         // Step 4: Generate Access Token
-        $token = $user->createToken('API TOKEN', ['user'])->plainTextToken;
+        $token = $user->createToken('API TOKEN')->plainTextToken;
 
         // event(new UserRegistered($user, $verificationCode));
 
@@ -56,7 +56,7 @@ class AuthController extends Controller
                 'token' => $token,
             ],
             'message' => 'User registered successfully',
-        ]);
+        ], 201);
     }
     public function login(LoginUserRequest $request): JsonResponse
     {
@@ -70,7 +70,6 @@ class AuthController extends Controller
         }
 
         $user = User::where('phone', $request->phone)->first();
-        // $user->update(['fcm_token' => $request->fcm_token]);
 
         $token = $user->createToken('API TOKEN', [$user->role])->plainTextToken;
 
@@ -113,7 +112,7 @@ class AuthController extends Controller
         }
 
         // Mark the user as verified
-        $user->update(['verification_code' => null]);
+        $user->update(['verification_code' => null, 'phone_verified_at' => now()]);
 
         return response()->json([
             'status' => 1,

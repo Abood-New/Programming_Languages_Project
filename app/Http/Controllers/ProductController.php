@@ -11,13 +11,14 @@ use App\Models\Store;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function getAllProducts()
     {
-        $products = Product::with('category')->paginate(20);
+        $products = Product::with('store', 'category')->paginate(20);
 
         if ($products->isEmpty()) {
             return response()->json([
@@ -31,6 +32,25 @@ class ProductController extends Controller
             'status' => 1,
             'data' => ['products' => $products],
             'message' => 'Products retrieved successfully'
+        ], 200);
+    }
+    public function getMyStoreProducts()
+    {
+        // Get the authenticated user's store
+        $store = Store::where('user_id', Auth::user()->id)->first();
+
+        // Check if the user owns a store
+        if (!$store) {
+            return response()->json(['message' => 'No store found for the authenticated user.'], 404);
+        }
+
+        // Get all products for the user's store
+        $products = Product::where('store_id', $store->id)->paginate(20);
+
+        return response()->json([
+            'status' => 1,
+            'products' => $products,
+            'message' => 'products retrieved successfully'
         ], 200);
     }
     public function productInStore($store_id)
@@ -85,10 +105,10 @@ class ProductController extends Controller
             'message' => 'Products retrieved successfully'
         ], 200);
     }
-    public function show($product_id)
+    public function getProductDetails($product_id)
     {
         try {
-            $product = Product::with('category')->findOrFail($product_id);
+            $product = Product::with('store', 'category')->findOrFail($product_id);
 
             return response()->json([
                 'status' => 1,
@@ -103,7 +123,7 @@ class ProductController extends Controller
             ], 404);
         }
     }
-    public function store(CreateProductRequest $request)
+    public function createProduct(CreateProductRequest $request)
     {
         try {
             $store = auth()->user()->store;
@@ -125,17 +145,12 @@ class ProductController extends Controller
 
             // Create the product
             $product = Product::create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'category_id' => $category->id,
+                'product_name' => $request->name,
                 'product_image' => $productImage,
-            ]);
-
-            ProductStore::create([
-                'product_id' => $product->id,
-                'store_id' => $store->id,
+                'category_id' => $category->id,
+                'description' => $request->description,
                 'available_quantity' => $request->available_quantity,
-                'price' => $request->price
+                'price' => $request->price,
             ]);
 
             $product->product_image_url = $productImage ? asset('storage/' . $productImage) : null;
@@ -159,7 +174,7 @@ class ProductController extends Controller
             ], 403);
         }
     }
-    public function update(UpdateProductRequest $request, $product_id)
+    public function updateProduct(UpdateProductRequest $request, $product_id)
     {
         try {
             // Get the authenticated user's store
@@ -169,17 +184,21 @@ class ProductController extends Controller
 
             Gate::authorize('update', $product);
 
-            // Find the ProductStore record for the given product and store
-            $productStore = ProductStore::where('store_id', $store->id)
-                ->where('product_id', $product_id)
-                ->firstOrFail();
+            if ($request->hasFile('product_image')) {
+                $product->product_image = $request->file('product_image')->store('product_images', 'public');
+            }
 
-            // Update the product store's details
-            $productStore->update($request->only(['available_quantity', 'price']));
+            $product->update(array_filter([
+                'product_name' => $request->product_name ?? $product->product_name,
+                'description' => $request->description ?? $product->description,
+                'category_id' => $request->category_id ?? $product->category_id,
+                'available_quantity' => $request->available_quantity ?? $product->available_quantity,
+                'price' => $request->price ?? $product->price,
+            ]));
 
             return response()->json([
                 'status' => 1,
-                'data' => ['product_store' => $productStore],
+                'data' => ['product' => $product],
                 'message' => 'Product updated successfully'
             ], 200);
 
@@ -205,13 +224,7 @@ class ProductController extends Controller
 
             Gate::authorize('delete', $product);
 
-            $store = auth()->user()->store;
-
-            $product_store = ProductStore::where('product_id', $product_id)
-                ->where('store_id', auth()->user()->store->id)
-                ->first();
-
-            $product_store->delete();
+            $product->delete();
 
             return response()->json([
                 'status' => 1,
@@ -238,11 +251,11 @@ class ProductController extends Controller
         // TODO
         $products = Product::query()
             ->when($request->product_name, function ($query) use ($request) {
-                $query->where('name', 'LIKE', '%' . $request->product_name . '%');
+                $query->where('product_name', 'LIKE', '%' . $request->product_name . '%');
             })
             ->when($request->store_name, function ($query) use ($request) {
                 $query->orWhereHas('stores', function ($q) use ($request) {
-                    $q->where('name', 'LIKE', '%' . $request->input('store_name') . '%');
+                    $q->where('store_name', 'LIKE', '%' . $request->input('store_name') . '%');
                 });
             })
             ->when($request->category_name, function ($query) use ($request) {

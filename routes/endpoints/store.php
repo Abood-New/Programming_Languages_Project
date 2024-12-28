@@ -2,14 +2,14 @@
 use App\Http\Controllers\StoreController;
 
 Route::prefix('stores')->middleware('auth:sanctum')->group(function () {
-    Route::middleware('admin')->group(function () {
+    Route::middleware('adminOrStoreOwner')->group(function () {
         // add\update\delete only admin store
-        Route::post('/', [StoreController::class, 'store'])->name('stores.store');
-        Route::put('/{store_id}', [StoreController::class, 'update'])->name('stores.update');
-        Route::delete('/{store_id}', [StoreController::class, 'destroy'])->name('stores.delete');
+        Route::post('/', [StoreController::class, "createStore"]);
+        Route::put('/{store_id}', [StoreController::class, "updateStore"]);
+        Route::delete('/{store_id}', [StoreController::class, "destroy"]);
     });
-
-    // list all stores
-    Route::get('/', [StoreController::class, 'index'])->name('stores.index');
-    Route::get('/{store_id}', [StoreController::class, 'show'])->name('stores.show');
+    Route::get('/search', [StoreController::class, "filterStoreByName"]);
+    Route::get('/', [StoreController::class, "getAllStores"]);
+    Route::get('/get-my-store', [StoreController::class, "getMyStore"])->middleware('isStoreOwner');
+    Route::get('/{storeId}/products', [StoreController::class, 'getProductsByStore']);
 });

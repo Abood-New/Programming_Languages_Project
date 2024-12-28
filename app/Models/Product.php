@@ -7,25 +7,29 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-        'name',
-        'description',
+        'product_name',
         'product_image',
-        'category_id'
+        'category_id',
+        'description',
+        'store_id',
+        'available_quantity',
+        'price'
     ];
 
-    public function favoritedBy()
+    public function favorites()
     {
         return $this->belongsToMany(User::class, 'favorites');
     }
-    public function stores()
+    public function store()
     {
-        return $this->belongsToMany(Store::class, 'product_stores')->withPivot([
-            'available_quantity',
-            'price'
-        ]);
+        return $this->belongsTo(Store::class);
     }
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

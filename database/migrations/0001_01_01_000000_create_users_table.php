@@ -15,15 +15,15 @@ return new class extends Migration {
             $table->string('first_name');
             $table->string('last_name');
             $table->string('phone')->unique();
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('phone_verified_at')->nullable();
+            $table->string('verification_code')->nullable();
             $table->string('password');
             $table->string('address');
             $table->string('profile_picture')->nullable();
-            $table->text('fcm_token')->nullable();
-            $table->string('verification_code')->nullable();
             $table->rememberToken();
-            $table->enum('role', ['user', 'admin'])->default('user');
+            $table->enum('role', ['admin', 'customer', 'store_owner'])->default('customer');
+            // $table->string('email')->unique();
+            // $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });
 

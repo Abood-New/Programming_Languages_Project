@@ -22,12 +22,10 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'password',
-        'email',
         'address',
         'phone',
         'profile_picture',
         'role',
-        'fcm_token',
         'verification_code'
     ];
 
@@ -50,7 +48,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -62,5 +60,9 @@ class User extends Authenticatable
     public function favorites()
     {
         return $this->belongsToMany(Product::class, 'favorites');
+    }
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 }

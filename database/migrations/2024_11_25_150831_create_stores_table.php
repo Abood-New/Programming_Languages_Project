@@ -12,9 +12,10 @@ return new class extends Migration {
     {
         Schema::create('stores', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('store_name');
+            $table->string('description');
             $table->string('store_image')->nullable();
-            $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('owner_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }
