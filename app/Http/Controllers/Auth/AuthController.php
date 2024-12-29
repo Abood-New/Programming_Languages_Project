@@ -119,5 +119,4 @@ class AuthController extends Controller
             'message' => 'Phone number verified successfully.',
         ]);
     }
-
 }
