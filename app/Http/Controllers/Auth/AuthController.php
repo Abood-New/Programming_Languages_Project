@@ -41,8 +41,9 @@ class AuthController extends Controller
 
         // Step 3: Store Profile Picture (if uploaded)
         if ($profilePictureName) {
-            $file->storeAs("users/{$user->id}", $profilePictureName);
+            $profile_picture = $file->storeAs("users/{$user->id}", $profilePictureName);
         }
+        $user->profile_picture_url = $profile_picture ? asset('storage/' . $profile_picture) : null;
 
         // Step 4: Generate Access Token
         $token = $user->createToken('API TOKEN')->plainTextToken;
@@ -71,6 +72,7 @@ class AuthController extends Controller
 
         $user = User::where('phone', $request->phone)->first();
 
+        $user->profile_picture_url = asset('storage/users/' . $user->id . '/' . $user->profile_picture);
         $token = $user->createToken('API TOKEN', [$user->role])->plainTextToken;
 
         $data = [];

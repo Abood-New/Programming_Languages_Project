@@ -9,6 +9,6 @@ Route::middleware(['auth:sanctum'])->prefix('product')->group(function () {
     }));
     Route::get('/', [ProductController::class, 'getAllProducts']);
     Route::get('/detail/{product_id}', [ProductController::class, "getProductDetails"]);
-    Route::get('/search', [ProductController::class, "searchProducts"]);
+    Route::get('/search', [ProductController::class, "search"]);
 });
 

@@ -31,9 +31,9 @@ class FavoriteController extends Controller
     }
 
     // Remove a product from favorites
-    public function destroy($id)
+    public function destroy($product_id)
     {
-        $favorite = Favorite::where('id', $id)->where('user_id', auth()->id())->first();
+        $favorite = Favorite::where('product_id', $product_id)->where('user_id', auth()->id())->first();
 
         if (!$favorite) {
             return response()->json(['message' => 'Favorite not found'], 404);
@@ -41,6 +41,6 @@ class FavoriteController extends Controller
 
         $favorite->delete();
 
-        return response()->json(['message' => 'Favorite removed successfully']);
+        return response()->json(['message' => 'Product removed successfully']);
     }
 }

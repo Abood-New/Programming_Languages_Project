@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -37,7 +38,7 @@ class ProductController extends Controller
     public function getMyStoreProducts()
     {
         // Get the authenticated user's store
-        $store = Store::where('user_id', Auth::user()->id)->first();
+        $store = Store::where('owner_id', Auth::user()->id)->first();
 
         // Check if the user owns a store
         if (!$store) {
@@ -144,8 +145,8 @@ class ProductController extends Controller
             }
 
             // Create the product
-            $product = Product::create([
-                'product_name' => $request->name,
+            $product = $store->products()->create([
+                'product_name' => $request->product_name,
                 'product_image' => $productImage,
                 'category_id' => $category->id,
                 'description' => $request->description,
@@ -184,17 +185,22 @@ class ProductController extends Controller
 
             Gate::authorize('update', $product);
 
+            $product_image = '';
             if ($request->hasFile('product_image')) {
-                $product->product_image = $request->file('product_image')->store('product_images', 'public');
+                if ($store->product_image) {
+                    Storage::disk('public')->delete('product_images/' . $product->product_image);
+                }
+                $product_image = $request->file('product_image')->store('product_images/' . $store->id, 'public');
             }
 
-            $product->update(array_filter([
+            $product->update([
                 'product_name' => $request->product_name ?? $product->product_name,
+                'product_image' => $product_image,
                 'description' => $request->description ?? $product->description,
-                'category_id' => $request->category_id ?? $product->category_id,
                 'available_quantity' => $request->available_quantity ?? $product->available_quantity,
                 'price' => $request->price ?? $product->price,
-            ]));
+            ]);
+            $product->product_image_url = asset('storage/' . $product->product_image);
 
             return response()->json([
                 'status' => 1,
@@ -251,10 +257,10 @@ class ProductController extends Controller
         // TODO
         $products = Product::query()
             ->when($request->product_name, function ($query) use ($request) {
-                $query->where('product_name', 'LIKE', '%' . $request->product_name . '%');
+                $query->where('product_name', 'LIKE', '%' . $request->input('product_name') . '%');
             })
             ->when($request->store_name, function ($query) use ($request) {
-                $query->orWhereHas('stores', function ($q) use ($request) {
+                $query->orWhereHas('store', function ($q) use ($request) {
                     $q->where('store_name', 'LIKE', '%' . $request->input('store_name') . '%');
                 });
             })
@@ -268,7 +274,7 @@ class ProductController extends Controller
             ->when($request->sortBy && $request->sortOrder, function ($query) use ($request) {
                 $query->orderBy($request->sortBy, $request->sortOrder);
             })
-            ->paginate(20);
+            ->get();
         // Return a structured response
         return response()->json([
             'status' => $products->isNotEmpty() ? 1 : 0,

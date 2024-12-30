@@ -44,7 +44,7 @@ class StoreController extends Controller
         $userId = Auth::user()->id;
 
         // Retrieve the stores for the authenticated user
-        $stores = Store::where('user_id', $userId)->get();
+        $stores = Store::where('owner_id', $userId)->get();
 
         // Check if the user has any stores
         if ($stores->isEmpty()) {
@@ -85,21 +85,23 @@ class StoreController extends Controller
             Gate::authorize('create', Store::class);
             $validated = $request->validate([
                 'store_name' => 'required|string',
+                'description' => 'required|string',
                 'store_image' => 'nullable|file|mimes:png,jpg|max:2048'
             ]);
 
             $storeImage = '';
             if ($request->hasFile('store_image')) {
-                $filePath = $request->file('store_image')->store('store_images/' . auth()->id(), 'public');
-                $storeImage = $filePath;
+                $request->file('store_image')->store('store_images/' . auth()->id(), 'public');
+                $storeImage = $request->file('store_image')->hashName();
             }
             $store = Store::create([
                 'store_name' => $validated['store_name'],
+                'description' => $validated['description'],
                 'store_image' => $storeImage,
                 'owner_id' => auth()->id()
             ]);
 
-            $store->store_image_url = asset('storage/' . $store->store_image);
+            $store->store_image_url = asset('storage/store_images/' . auth()->id() . '/' . $storeImage);
             return response()->json([
                 'status' => 1,
                 'data' => [
@@ -130,7 +132,7 @@ class StoreController extends Controller
 
             if ($request->hasFile('store_image')) {
                 if ($store->store_image) {
-                    Storage::disk('public')->delete($store->store_image);
+                    Storage::disk('public')->delete('store_images/' . auth()->id() . '/' . $store->store_image);
                 }
                 $filePath = $request->file('store_image')->store('store_images/' . auth()->id(), 'public');
                 $validated['store_image'] = $filePath;
