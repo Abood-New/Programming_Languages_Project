@@ -41,7 +41,8 @@ class AuthController extends Controller
 
         // Step 3: Store Profile Picture (if uploaded)
         if ($profilePictureName) {
-            $profile_picture = $file->storeAs("users/{$user->id}", $profilePictureName);
+            $profile_picture = $request->file('profile_picture')->store('profile_picture/' . $user->id, 'public');
+              //  $file->storeAs("users/{$user->id}", $profilePictureName);
         }
         $user->profile_picture_url = $profile_picture ? asset('storage/' . $profile_picture) : null;
 
