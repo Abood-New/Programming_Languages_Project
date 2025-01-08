@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Admin Routes
-Route::middleware('auth:sanctum', 'isAdmin')->group(function () {
+Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     // Get all orders (admin can see all orders)
     Route::get('/admin/orders', [AdminOrderController::class, 'index']);
     // Get a specific order by ID (admin can see order details)
@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum', 'isAdmin')->group(function () {
     // Update order status (admin can change the status of the order)
 });
 
-Route::middleware('auth:sanctum', 'isStoreOwner')->group(function () {
+Route::middleware(['auth:sanctum', 'isStoreOwner'])->group(function () {
     // Get all orders related to the store (store owner can see only their store's orders)
     Route::get('/store/orders', [StoreOrderController::class, 'index']);
     // Get a specific order by ID (store owner can see their store's order details)

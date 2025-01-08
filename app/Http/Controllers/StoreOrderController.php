@@ -62,7 +62,7 @@ class StoreOrderController extends Controller
 
         // Find the order item by ID, ensuring the store owner owns the store
         $orderItem = OrderItem::where('id', $id)
-            ->whereIn('store_id', Auth::user()->stores->pluck('id')) // Ensure the store belongs to the user
+            ->where('store_id', Auth::user()->store->id) // Ensure the store belongs to the user
             ->first();
 
         if (!$orderItem) {

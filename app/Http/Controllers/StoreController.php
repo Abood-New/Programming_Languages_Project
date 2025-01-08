@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Store;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -168,6 +170,17 @@ class StoreController extends Controller
             $store = Store::findOrFail($store_id);
 
             Gate::authorize('delete', $store);
+
+            $orderItem = OrderItem::where('store_id', '=', $store_id)->get();
+            foreach ($orderItem as $item) {
+                if ($item->order_status == OrderStatus::PENDING->value) {
+                    return response()->json([
+                        'status' => 0,
+                        'data' => [],
+                        'message' => 'cannot delete store while order is still pending'
+                    ], 400);
+                }
+            }
 
             $store->delete();
 

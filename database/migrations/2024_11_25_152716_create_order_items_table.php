@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('store_id')->constrained()->cascadeOnDelete();
-            $table->enum('order_statu', ['pending', 'processing', 'completed', 'canceled'])->default('pending');
+            $table->enum('order_status', ['pending', 'processing', 'completed', 'canceled'])->default('pending');
             $table->unsignedInteger('quantity');
             $table->unsignedInteger('price');
             $table->timestamps();

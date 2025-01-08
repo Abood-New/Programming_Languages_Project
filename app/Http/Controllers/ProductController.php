@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Http\Requests\CreateProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductStore;
 use App\Models\Store;
@@ -133,7 +135,7 @@ class ProductController extends Controller
 
             $category = Category::where('name', $request->category)->first();
 
-            if (!$category) {
+            if (is_null($category)) {
                 Category::create([
                     'name' => $request->category
                 ]);
@@ -230,6 +232,16 @@ class ProductController extends Controller
 
             Gate::authorize('delete', $product);
 
+            $orderItem = OrderItem::where('product_id', '=', $product->id)->get();
+            foreach ($orderItem as $item) {
+                if ($item->order_status == OrderStatus::PENDING->value) {
+                    return response()->json([
+                        'status' => 0,
+                        'data' => [],
+                        'message' => 'Cannot delete product while order still pending'
+                    ], 400);
+                }
+            }
             $product->delete();
 
             return response()->json([

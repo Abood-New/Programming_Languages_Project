@@ -10,9 +10,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
-
 
 class AuthController extends Controller
 {
@@ -40,9 +37,9 @@ class AuthController extends Controller
         $user = User::create($userData);
 
         // Step 3: Store Profile Picture (if uploaded)
+        $profile_picture = null;
         if ($profilePictureName) {
             $profile_picture = $request->file('profile_picture')->store('profile_picture/' . $user->id, 'public');
-              //  $file->storeAs("users/{$user->id}", $profilePictureName);
         }
         $user->profile_picture_url = $profile_picture ? asset('storage/' . $profile_picture) : null;
 

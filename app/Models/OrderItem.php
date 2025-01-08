@@ -13,6 +13,7 @@ class OrderItem extends Model
         'store_id',
         'quantity',
         'price',
+        'order_status',
     ];
 
     public function order()
