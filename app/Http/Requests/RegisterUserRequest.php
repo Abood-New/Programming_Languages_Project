@@ -28,7 +28,7 @@ class RegisterUserRequest extends FormRequest
             'password' => 'required|min:8|string|confirmed',
             'address' => 'nullable|string',
             'profile_picture' => 'nullable|file|mimes:png,jpg,jpeg|max:2048',
-            'role' => 'required|in:admin,store_owner,customer'
+            'role' => 'nullable|in:admin,store_owner,customer'
         ];
     }
 }
